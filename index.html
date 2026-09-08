@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Accompagnement Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0D0D0D;
+    --accent:#CC1719;
+    --cream:#F0EDE6;
+    --cream-deep:#E3DBC8;
+    --paper:#FFFFFF;
+    --muted:#847B68;
+    --line:#D9D0BA;
+    --radius:3px;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:'Barlow', sans-serif;
+    background:var(--cream);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .hidden{ display:none !important; }
+  button{ font-family:'Barlow', sans-serif; }
+
+  /* ---------- Login ---------- */
+  #screen-login{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .login-box{
+    width:100%; max-width:380px; background:var(--paper); border:1px solid var(--line);
+    border-radius:var(--radius); padding:34px 30px;
+  }
+  .login-brand{
+    font-family:'Barlow Condensed', sans-serif; font-size:12px; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:6px;
+  }
+  .login-title{ font-size:24px; font-weight:600; margin:0 0 24px; }
+  .login-box label{ display:block; font-size:12.5px; font-weight:600; color:var(--muted); margin-bottom:6px; }
+  .login-box input{
+    width:100%; font-size:15px; padding:11px 12px; border:1px solid var(--line);
+    border-radius:var(--radius); background:var(--cream); color:var(--ink); margin-bottom:16px;
+  }
+  .login-box input:focus{ outline:none; border-color:var(--accent); background:var(--paper); }
+  .login-error{ color:var(--accent); font-size:13px; margin-bottom:14px; display:none; }
+  .btn-full{
+    width:100%; padding:12px; border-radius:var(--radius); border:none;
+    background:var(--ink); color:#fff; font-size:15px; font-weight:600; cursor:pointer;
+  }
+  .btn-full:disabled{ opacity:.5; cursor:default; }
+
+  /* ---------- App shell ---------- */
+  .app{ max-width:1180px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; }
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 28px; border-bottom:1px solid var(--line); gap:16px;
+  }
+  .topbar-left{ display:flex; flex-direction:column; gap:2px; }
+  .brand{
+    font-family:'Barlow Condensed', sans-serif; font-weight:600; font-size:12px;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--muted); cursor:pointer;
+  }
+  .store-name{ font-size:22px; font-weight:600; line-height:1.1; }
+  .store-meta{ font-size:13px; color:var(--muted); margin-top:2px; }
+  .topbar-right{ display:flex; align-items:center; gap:10px; }
+  .status-pill{
+    display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:999px;
+    font-size:13px; font-weight:600; border:1px solid var(--line); background:var(--paper);
+    white-space:nowrap;
+  }
+  .status-pill .dot{ width:7px; height:7px; border-radius:50%; background:#B8860B; }
+  .status-pill.final .dot{ background:#2E7D32; }
+  .status-pill.final{ border-color:#2E7D32; color:#2E7D32; }
+  .icon-btn{
+    border:1px solid var(--line); background:var(--paper); border-radius:var(--radius);
+    padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer; color:var(--ink);
+  }
+
+  /* ---------- Home / list ---------- */
+  .home{ padding:34px 28px; max-width:760px; margin:0 auto; width:100%; }
+  .home h1{ font-size:26px; margin:0 0 4px; }
+  .home .sub{ color:var(--muted); font-size:14px; margin:0 0 26px; }
+  .new-btn{
+    display:flex; align-items:center; gap:10px; width:100%; padding:16px;
+    border:1px dashed var(--line); border-radius:var(--radius); background:var(--paper);
+    font-size:15px; font-weight:600; cursor:pointer; color:var(--accent); margin-bottom:28px;
+  }
+  .list-item{
+    display:flex; align-items:center; gap:14px; padding:14px 16px; border:1px solid var(--line);
+    border-radius:var(--radius); background:var(--paper); margin-bottom:10px; cursor:pointer;
+  }
+  .list-item:hover{ border-color:var(--ink); }
+  .list-item .li-main{ flex:1; min-width:0; }
+  .list-item .li-store{ font-weight:600; font-size:15px; }
+  .list-item .li-meta{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .badge{
+    font-size:11px; font-weight:600; padding:4px 9px; border-radius:999px; white-space:nowrap;
+    background:var(--cream-deep); color:var(--muted);
+  }
+  .badge.final{ background:#E4F0E5; color:#2E7D32; }
+  .empty-state{ color:var(--muted); font-size:14px; padding:20px 0; text-align:center; }
+
+  /* ---------- Layout editor ---------- */
+  .body-layout{ display:flex; flex:1; min-height:0; }
+  .rail{ width:210px; flex-shrink:0; padding:24px 10px 24px 28px; border-right:1px solid var(--line); }
+  .rail-phase{
+    font-family:'Barlow Condensed', sans-serif; font-size:11px; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:18px 0 8px 30px;
+  }
+  .rail-phase:first-child{ margin-top:0; }
+  .step{
+    position:relative; display:flex; align-items:flex-start; gap:12px; padding:8px 8px 8px 0;
+    cursor:pointer; border:none; background:none; width:100%; text-align:left;
+  }
+  .step-line{ position:absolute; left:11px; top:26px; bottom:-8px; width:1px; background:var(--line); }
+  .step:last-child .step-line{ display:none; }
+  .step-num{
+    flex-shrink:0; width:22px; height:22px; border-radius:50%; border:1px solid var(--line);
+    background:var(--paper); display:flex; align-items:center; justify-content:center;
+    font-family:'Barlow Condensed', sans-serif; font-weight:600; font-size:12px; color:var(--muted); z-index:1;
+  }
+  .step-label{ font-size:14px; color:var(--muted); padding-top:2px; }
+  .step.active .step-num{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .step.active .step-label{ color:var(--ink); font-weight:600; }
+  .step.done .step-num{ background:var(--ink); border-color:var(--ink); color:#fff; font-size:0; }
+  .step.done .step-num::after{ content:"✓"; font-size:12px; }
+
+  .content{ flex:1; min-width:0; padding:28px 34px 110px; }
+  .screen{ display:none; max-width:760px; }
+  .screen.active{ display:block; }
+  .screen-eyebrow{
+    font-family:'Barlow Condensed', sans-serif; font-size:12px; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:6px;
+  }
+  .screen-title{ font-size:24px; font-weight:600; margin:0 0 6px; }
+  .screen-hint{ font-size:13.5px; color:var(--muted); margin:0 0 22px; max-width:58ch; line-height:1.5; }
+
+  .field-group{ margin-bottom:18px; }
+  .field-row{ display:flex; gap:16px; }
+  .field-row .field-group{ flex:1; }
+  label{ display:block; font-size:12.5px; font-weight:600; color:var(--muted); margin-bottom:6px; }
+  input[type=text], input[type=date], input[type=number], textarea, select{
+    width:100%; font-family:'Barlow', sans-serif; font-size:15px; padding:10px 12px;
+    border:1px solid var(--line); border-radius:var(--radius); background:var(--paper); color:var(--ink);
+  }
+  input:focus, textarea:focus, select:focus{ outline:none; border-color:var(--accent); }
+  textarea{ resize:vertical; min-height:70px; line-height:1.45; }
+  .field-locked{
+    display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--cream-deep);
+    border:1px solid var(--line); border-radius:var(--radius); font-size:15px;
+  }
+  .field-locked .tag{
+    font-size:10px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--muted);
+    background:var(--paper); border:1px solid var(--line); padding:2px 6px; border-radius:999px;
+  }
+
+  .autocomplete{ position:relative; }
+  .autocomplete-list{
+    position:absolute; top:100%; left:0; right:0; background:var(--paper); border:1px solid var(--line);
+    border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:240px; overflow-y:auto; z-index:5;
+  }
+  .autocomplete-item{ padding:10px 12px; cursor:pointer; font-size:14px; border-bottom:1px solid var(--cream-deep); }
+  .autocomplete-item:hover, .autocomplete-item.hi{ background:var(--cream); }
+  .autocomplete-item .ac-code{ color:var(--muted); font-size:12px; }
+
+  .card{
+    border:1px solid var(--line); border-radius:var(--radius); background:var(--paper); margin-bottom:20px; overflow:hidden;
+  }
+  .card-head{
+    display:flex; justify-content:space-between; align-items:center; padding:12px 15px;
+    background:var(--cream-deep); border-bottom:1px solid var(--line);
+  }
+  .card-head h3{ margin:0; font-size:14px; font-weight:600; }
+  .card-body{ padding:15px; }
+
+  table.datagrid{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  table.datagrid th{
+    text-align:left; font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--muted); padding:6px 8px; border-bottom:1px solid var(--line);
+  }
+  table.datagrid td{ padding:5px 8px; border-bottom:1px solid var(--cream-deep); }
+  table.datagrid input{ padding:6px 8px; font-size:13.5px; border-color:transparent; background:transparent; }
+  table.datagrid input:hover{ background:var(--cream); }
+  table.datagrid input:focus{ background:var(--paper); border-color:var(--accent); }
+  .calc{ color:var(--muted); font-style:italic; font-size:12.5px; padding:6px 8px; display:block; }
+
+  .link-btn{ background:none; border:none; cursor:pointer; font-size:13px; font-weight:600; color:var(--accent); padding:4px 0; }
+
+  .collab{ border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:12px; background:var(--paper); }
+  .collab-head{ display:flex; gap:10px; align-items:center; margin-bottom:12px; }
+  .collab-head input[type=text]{ flex:1; font-weight:600; }
+  .role-toggle{ display:flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; flex-shrink:0; }
+  .role-toggle button{ border:none; background:var(--paper); font-size:12px; font-weight:600; padding:7px 13px; cursor:pointer; color:var(--muted); }
+  .role-toggle button.on{ background:var(--ink); color:#fff; }
+  .metric-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(88px,1fr)); gap:10px; }
+  .metric-grid .field-group{ margin-bottom:0; }
+  .metric-grid label{ font-size:11px; }
+  .remove-collab{ border:1px solid var(--line); background:var(--paper); border-radius:50%; width:24px; height:24px; cursor:pointer; color:var(--muted); flex-shrink:0; }
+
+  .swot-row{ display:grid; grid-template-columns:90px 1fr 1fr 1fr; border-bottom:1px solid var(--line); }
+  .swot-row:last-child{ border-bottom:none; }
+  .swot-label{
+    padding:14px 8px; font-family:'Barlow Condensed', sans-serif; font-weight:600; font-size:12.5px;
+    letter-spacing:.05em; text-transform:uppercase; color:var(--muted); display:flex; align-items:center;
+  }
+  .swot-cell{ padding:12px; border-left:1px solid var(--line); }
+  .swot-cell-head{ font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
+  .swot-cell textarea{ min-height:100px; border:none; padding:0; font-size:13.5px; }
+  .swot-cell textarea:focus{ outline:none; }
+
+  .quality-compare{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .quality-visit{ border:1px solid var(--line); border-radius:var(--radius); padding:14px; }
+  .quality-visit .visit-label{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; font-weight:600; margin-bottom:8px; display:flex; justify-content:space-between; }
+  .score-badge{ display:inline-flex; align-items:baseline; gap:4px; font-family:'Barlow Condensed', sans-serif; font-size:28px; font-weight:700; color:var(--accent); margin-bottom:8px; }
+  .score-badge input{ width:60px; border:none; padding:0; font-size:28px; font-weight:700; color:var(--accent); font-family:'Barlow Condensed', sans-serif; }
+  .score-badge span{ font-size:13px; color:var(--muted); font-weight:600; }
+  .quality-visit input[type=date], .quality-visit input[type=text]{ margin-bottom:6px; font-size:12.5px; padding:6px 8px; }
+
+  .action-row{ display:grid; grid-template-columns:1fr 120px 120px 120px 26px; gap:8px; align-items:center; padding:7px 0; border-bottom:1px solid var(--cream-deep); }
+  .action-row input, .action-row select{ font-size:13px; padding:7px 9px; }
+  .remove-btn{ width:24px; height:24px; border-radius:50%; border:1px solid var(--line); background:var(--paper); color:var(--muted); cursor:pointer; font-size:13px; line-height:1; }
+
+  .question-block{ margin-bottom:20px; }
+  .question-block .q{ font-size:15px; font-weight:600; margin-bottom:8px; }
+
+  .recap-list{ list-style:none; padding:0; margin:0 0 22px; }
+  .recap-list li{ display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .recap-list li span:first-child{ color:var(--muted); }
+  .recipients{ display:flex; flex-direction:column; gap:8px; margin-bottom:24px; }
+  .recipient{ display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:var(--radius); font-size:14px; background:var(--paper); }
+  .recipient .avatar{ width:26px; height:26px; border-radius:50%; background:var(--cream-deep); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+  .recipient .addr{ color:var(--muted); margin-left:auto; font-size:12px; }
+  .finalize-note{ font-size:13px; color:var(--muted); line-height:1.5; margin-bottom:18px; border-left:2px solid var(--accent); padding-left:12px; }
+
+  .actionbar{
+    position:sticky; bottom:0; border-top:1px solid var(--line); background:rgba(240,237,230,.94);
+    backdrop-filter:blur(6px); padding:13px 34px; display:flex; justify-content:space-between; align-items:center;
+    max-width:1180px; margin:0 auto; width:100%;
+  }
+  .actionbar-left{ font-size:12px; color:var(--muted); }
+  .actionbar-right{ display:flex; gap:10px; }
+  .btn{ font-size:14px; font-weight:600; padding:11px 20px; border-radius:var(--radius); border:1px solid var(--line); background:var(--paper); color:var(--ink); cursor:pointer; }
+  .btn.primary{ background:var(--ink); border-color:var(--ink); color:#fff; }
+  .btn.accent{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn:disabled{ opacity:.5; cursor:default; }
+
+  @media (max-width: 860px){
+    .body-layout{ flex-direction:column; }
+    .rail{ width:100%; border-right:none; border-bottom:1px solid var(--line); display:flex; overflow-x:auto; padding:12px 16px; gap:4px; }
+    .rail-phase{ display:none; }
+    .step{ flex-direction:column; align-items:center; gap:6px; width:auto; padding:4px 12px; }
+    .step-line{ display:none; }
+    .step-label{ font-size:11px; white-space:nowrap; }
+    .content{ padding:20px 16px 110px; }
+    .field-row{ flex-direction:column; gap:0; }
+    .quality-compare{ grid-template-columns:1fr; }
+    .swot-row{ grid-template-columns:1fr; }
+    .swot-label{ padding:10px 12px 0; }
+    .swot-cell{ border-left:none; border-top:1px solid var(--line); }
+    .action-row{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="screen-login">
+  <div class="login-box">
+    <div class="login-brand">Optical Center</div>
+    <h1 class="login-title">Accompagnement Manager</h1>
+    <label>Identifiant Zimbra</label>
+    <input type="text" id="loginUser" placeholder="emilie.nahon@optical-center.com" autocomplete="username">
+    <label>Mot de passe</label>
+    <input type="password" id="loginPass" autocomplete="current-password">
+    <div class="login-error" id="loginError">Identifiants incorrects.</div>
+    <button class="btn-full" id="loginBtn" onclick="doLogin()">Se connecter</button>
+  </div>
+</div>
+
+<!-- ============ HOME ============ -->
+<div id="screen-home" class="hidden">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="brand">Accompagnement Manager</div>
+      <div class="store-name" id="homeUserName">—</div>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+  <div class="home">
+    <h1>Mes comptes-rendus</h1>
+    <p class="sub">Un compte-rendu par visite. Reprenez un brouillon ou démarrez une nouvelle visite.</p>
+    <button class="new-btn" onclick="startNew()">+ Nouveau compte-rendu de visite</button>
+    <div id="homeList"></div>
+  </div>
+</div>
+
+<!-- ============ EDITOR ============ -->
+<div id="screen-app" class="app hidden">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="brand" onclick="goHome()" style="cursor:pointer;">← Mes comptes-rendus</div>
+      <div class="store-name" id="appStoreName">Sélectionner un magasin</div>
+      <div class="store-meta" id="appStoreMeta"></div>
+    </div>
+    <div class="topbar-right">
+      <span class="status-pill" id="statusPill"><span class="dot"></span> Brouillon</span>
+    </div>
+  </div>
+
+  <div class="body-layout">
+
+    <nav class="rail" id="rail">
+      <div class="rail-phase">Avant la visite</div>
+      <button class="step active" data-step="1" onclick="goTo(1)">
+        <div class="step-num">1</div><div class="step-label">Magasin &amp; infos</div><div class="step-line"></div>
+      </button>
+      <div class="rail-phase">Matin</div>
+      <button class="step" data-step="2" onclick="goTo(2)">
+        <div class="step-num">2</div><div class="step-label">Analyse stats</div><div class="step-line"></div>
+      </button>
+      <button class="step" data-step="3" onclick="goTo(3)">
+        <div class="step-num">3</div><div class="step-label">SWOT</div><div class="step-line"></div>
+      </button>
+      <button class="step" data-step="4" onclick="goTo(4)">
+        <div class="step-num">4</div><div class="step-label">Suivi qualité</div><div class="step-line"></div>
+      </button>
+      <div class="rail-phase">Après-midi</div>
+      <button class="step" data-step="5" onclick="goTo(5)">
+        <div class="step-num">5</div><div class="step-label">Plan d'action</div><div class="step-line"></div>
+      </button>
+      <button class="step" data-step="6" onclick="goTo(6)">
+        <div class="step-num">6</div><div class="step-label">Bilan de journée</div><div class="step-line"></div>
+      </button>
+      <div class="rail-phase">Envoi</div>
+      <button class="step" data-step="7" onclick="goTo(7)">
+        <div class="step-num">7</div><div class="step-label">Finalisation</div>
+      </button>
+    </nav>
+
+    <main class="content">
+
+      <!-- STEP 1 -->
+      <section class="screen active" data-screen="1">
+        <div class="screen-eyebrow">Étape 1</div>
+        <h1 class="screen-title">Magasin &amp; informations générales</h1>
+        <p class="screen-hint">Le manager se pré-remplit depuis magasins.csv une fois le magasin choisi.</p>
+
+        <div class="field-group">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;">
+            <input type="checkbox" id="manualStoreToggle" onchange="toggleManualStore(this.checked)" style="width:auto;margin:0;">
+            Magasin hors magasins.csv (franchise...) — saisir les infos à la main
+          </label>
+        </div>
+
+        <div id="storeAutoBlock">
+          <div class="field-group autocomplete">
+            <label>Magasin</label>
+            <input type="text" id="storeSearch" placeholder="Rechercher un magasin..." autocomplete="off" oninput="onStoreSearch()">
+            <div class="autocomplete-list hidden" id="storeSuggestions"></div>
+          </div>
+        </div>
+
+        <div id="storeManualBlock" class="hidden">
+          <div class="field-row">
+            <div class="field-group">
+              <label>Nom du magasin</label>
+              <input type="text" id="manualLibelle" placeholder="Ex : OPTIQUE DURAND (franchise)" oninput="updateManualStore()">
+            </div>
+            <div class="field-group">
+              <label>Code magasin (optionnel)</label>
+              <input type="text" id="manualCode" placeholder="Laisser vide si inconnu" oninput="updateManualStore()">
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label>Manager</label>
+            <div class="field-locked" id="managerLockedBlock"><span id="managerName">—</span> <span class="tag">magasins.csv</span></div>
+            <input type="text" id="manualManagerInput" class="hidden" placeholder="Nom du manager" oninput="updateManualStore()">
+          </div>
+          <div class="field-group">
+            <label>Années d'expérience management</label>
+            <input type="text" id="f_experience" data-field="infos.experience">
+          </div>
+        </div>
+
+        <div id="manualEmailBlock" class="field-group hidden">
+          <label>Email du magasin (pour l'envoi du compte-rendu à la finalisation)</label>
+          <input type="text" id="manualEmail" placeholder="magasin@..." oninput="updateManualStore()">
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label>Date de la visite</label>
+            <input type="date" id="f_dateVisite" data-field="infos.dateVisite">
+          </div>
+          <div class="field-group">
+            <label>Itinérant accompagnateur</label>
+            <div class="field-locked"><span id="itinerantName">—</span></div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>Inclusion (annonce à l'équipe)</label>
+          <textarea data-field="infos.inclusion" placeholder="Notes sur l'annonce du but de la visite à l'équipe..."></textarea>
+        </div>
+        <div class="field-group">
+          <label>Équipe (composition, ambiance générale)</label>
+          <textarea data-field="infos.equipe" placeholder="Notes sur l'équipe présente ce jour..."></textarea>
+        </div>
+      </section>
+
+      <!-- STEP 2 -->
+      <section class="screen" data-screen="2">
+        <div class="screen-eyebrow">Étape 2 · Matin</div>
+        <h1 class="screen-title">Analyse des statistiques</h1>
+        <p class="screen-hint">Historique magasin, puis détail par collaborateur.</p>
+
+        <div class="card">
+          <div class="card-head"><h3>Historique magasin</h3><button class="link-btn" onclick="addHistoriqueRow()">+ Année</button></div>
+          <div class="card-body">
+            <table class="datagrid">
+              <thead><tr><th>Année</th><th>CA réalisé</th><th>Objectif annuel</th><th>Écart</th><th>Positionnement</th><th>Causes</th></tr></thead>
+              <tbody id="historiqueBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Détail par collaborateur</h3><button class="link-btn" onclick="addCollab()">+ Ajouter</button></div>
+          <div class="card-body" id="collabList"></div>
+        </div>
+      </section>
+
+      <!-- STEP 3 -->
+      <section class="screen" data-screen="3">
+        <div class="screen-eyebrow">Étape 3 · Matin</div>
+        <h1 class="screen-title">SWOT</h1>
+        <p class="screen-hint">Laisser le manager s'exprimer avant de compléter. Une solution en face de chaque point si possible.</p>
+
+        <div class="card">
+          <div class="swot-row">
+            <div class="swot-label">Interne</div>
+            <div class="swot-cell"><div class="swot-cell-head">Forces</div><textarea data-field="swot.interne.forces"></textarea></div>
+            <div class="swot-cell"><div class="swot-cell-head">Faiblesses</div><textarea data-field="swot.interne.faiblesses"></textarea></div>
+            <div class="swot-cell"><div class="swot-cell-head">Solutions</div><textarea data-field="swot.interne.solutions"></textarea></div>
+          </div>
+          <div class="swot-row">
+            <div class="swot-label">Externe</div>
+            <div class="swot-cell"><div class="swot-cell-head">Opportunités</div><textarea data-field="swot.externe.opportunites"></textarea></div>
+            <div class="swot-cell"><div class="swot-cell-head">Menaces</div><textarea data-field="swot.externe.menaces"></textarea></div>
+            <div class="swot-cell"><div class="swot-cell-head">Solutions</div><textarea data-field="swot.externe.solutions"></textarea></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 4 -->
+      <section class="screen" data-screen="4">
+        <div class="screen-eyebrow">Étape 4 · Matin</div>
+        <h1 class="screen-title">Suivi qualité</h1>
+        <p class="screen-hint">Comparer les 2 dernières visites qualité connues.</p>
+
+        <div class="quality-compare">
+          <div class="quality-visit">
+            <div class="visit-label">Visite N-1
+              <input type="date" data-field="qualite.visite1.date" style="width:auto;">
+            </div>
+            <input type="text" data-field="qualite.visite1.evaluateur" placeholder="Opticien évalué">
+            <div class="score-badge"><input type="number" data-field="qualite.visite1.score" placeholder="0"><span>/ 100</span></div>
+            <textarea data-field="qualite.visite1.constat" placeholder="Constat..."></textarea>
+          </div>
+          <div class="quality-visit">
+            <div class="visit-label">Visite N
+              <input type="date" data-field="qualite.visite2.date" style="width:auto;">
+            </div>
+            <input type="text" data-field="qualite.visite2.evaluateur" placeholder="Opticien évalué">
+            <div class="score-badge"><input type="number" data-field="qualite.visite2.score" placeholder="0"><span>/ 100</span></div>
+            <textarea data-field="qualite.visite2.constat" placeholder="Constat..."></textarea>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <div class="card-head"><h3>Axes de travail identifiés</h3></div>
+          <div class="card-body">
+            <textarea data-field="qualite.axes" placeholder="Ce qui doit être mis en place pour progresser..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 5 -->
+      <section class="screen" data-screen="5">
+        <div class="screen-eyebrow">Étape 5 · Après-midi</div>
+        <h1 class="screen-title">Plan d'action</h1>
+        <p class="screen-hint">D'abord le manager, puis le plan magasin &amp; opticiens.</p>
+
+        <div class="card">
+          <div class="card-head"><h3>Forces / points à améliorer du manager</h3><button class="link-btn" onclick="addManagerRow()">+ Ligne</button></div>
+          <div class="card-body">
+            <table class="datagrid">
+              <thead><tr><th>Forces</th><th>À améliorer</th><th>Solutions</th></tr></thead>
+              <tbody id="managerRowsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Plan d'action magasin &amp; opticiens</h3><button class="link-btn" onclick="addAction()">+ Action</button></div>
+          <div class="card-body" id="actionList"></div>
+        </div>
+      </section>
+
+      <!-- STEP 6 -->
+      <section class="screen" data-screen="6">
+        <div class="screen-eyebrow">Étape 6 · Après-midi</div>
+        <h1 class="screen-title">Bilan de la journée</h1>
+        <p class="screen-hint">À poser au manager avant de conclure. Ce compte-rendu lui sera transmis.</p>
+
+        <div class="question-block">
+          <div class="q">Comment te sens-tu ?</div>
+          <textarea data-field="bilan.q1"></textarea>
+        </div>
+        <div class="question-block">
+          <div class="q">Que retiens-tu de notre journée ? Qu'est-ce qu'elle t'a apporté ?</div>
+          <textarea data-field="bilan.q2"></textarea>
+        </div>
+        <div class="question-block">
+          <div class="q">Que décides-tu de mettre en place dès demain ?</div>
+          <textarea data-field="bilan.q3"></textarea>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Commentaires itinérant</h3></div>
+          <div class="card-body">
+            <textarea data-field="bilan.commentairesItinerant" style="min-height:110px" placeholder="Synthèse libre, transmise à l'AR du magasin..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 7 -->
+      <section class="screen" data-screen="7">
+        <div class="screen-eyebrow">Étape 7</div>
+        <h1 class="screen-title">Finalisation</h1>
+        <p class="screen-hint">Une fois finalisé, le compte-rendu est verrouillé et envoyé automatiquement.</p>
+
+        <ul class="recap-list" id="recapList"></ul>
+
+        <label style="margin-bottom:10px;">Destinataires à l'envoi</label>
+        <div class="recipients" id="recipientsList"></div>
+
+        <div class="finalize-note">
+          L'adresse magasin vient de la colonne email de magasins.csv — le manager reçoit directement son compte-rendu.
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="actionbar">
+    <div class="actionbar-left" id="saveStatus">—</div>
+    <div class="actionbar-right">
+      <button class="btn" id="prevBtn" onclick="prevStep()">Précédent</button>
+      <button class="btn primary" id="nextBtn" onclick="nextStep()">Suivant</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ========================= CONFIG =========================
+  const WORKER_URL = 'https://zimbra-relay.oli-baroukh.workers.dev';
+  const MAGASINS_CSV_URL = 'https://raw.githubusercontent.com/olibaroukh/bilan-passage/main/magasins.csv';
+  const APP_VERSION = '2026.09.08-1';
+  const SW_VERSION = '2026.09.08-1';
+  // NOTE : nom de colonne manager dans magasins.csv à confirmer — 'manager' utilisé
+  // par défaut ci-dessous (MANAGER_COL), à ajuster si le nom réel diffère.
+  const MANAGER_COL = 'manager';
+
+  // ========================= STATE =========================
+  let session = null;       // { token, email, nom }
+  let stores = [];          // magasins.csv parsé
+  let currentRecord = null; // { id, magasin_code, magasin_libelle, manager, itinerant, date_visite, statut, contenu }
+  let currentStep = 1;
+  const totalSteps = 7;
+  let saveTimer = null;
+
+  const emptyContenu = () => ({
+    infos: { experience:'', dateVisite:'', inclusion:'', equipe:'', magasinEmailManuel:'' },
+    stats: { historique: [], collaborateurs: [] },
+    swot: {
+      interne: { forces:'', faiblesses:'', solutions:'' },
+      externe: { opportunites:'', menaces:'', solutions:'' }
+    },
+    qualite: {
+      visite1:{ date:'', evaluateur:'', score:'', constat:'' },
+      visite2:{ date:'', evaluateur:'', score:'', constat:'' },
+      axes:''
+    },
+    plan: { managerRows: [], actions: [] },
+    bilan: { q1:'', q2:'', q3:'', commentairesItinerant:'' }
+  });
+
+  // ========================= SESSION / LOGIN =========================
+  function restoreSession(){
+    const raw = localStorage.getItem('accomp_session');
+    if(raw){
+      try{ session = JSON.parse(raw); }catch(e){ session = null; }
+    }
+    if(session && session.token){
+      showHome();
+    } else {
+      showLogin();
+    }
+  }
+
+  async function doLogin(){
+    const user = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    const btn = document.getElementById('loginBtn');
+    const err = document.getElementById('loginError');
+    err.style.display = 'none';
+    if(!user || !pass) return;
+    btn.disabled = true; btn.textContent = 'Connexion...';
+    try{
+      const res = await fetch(WORKER_URL + '/accompagnement-login', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ user, pass })
+      });
+      if(!res.ok) throw new Error('auth failed');
+      const data = await res.json();
+      session = { token: data.token, email: user, nom: data.nom || user };
+      localStorage.setItem('accomp_session', JSON.stringify(session));
+      showHome();
+    } catch(e){
+      err.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Se connecter';
+    }
+  }
+
+  function logout(){
+    localStorage.removeItem('accomp_session');
+    session = null;
+    showLogin();
+  }
+
+  function showLogin(){
+    document.getElementById('screen-login').classList.remove('hidden');
+    document.getElementById('screen-home').classList.add('hidden');
+    document.getElementById('screen-app').classList.add('hidden');
+  }
+
+  async function showHome(){
+    document.getElementById('screen-login').classList.add('hidden');
+    document.getElementById('screen-app').classList.add('hidden');
+    document.getElementById('screen-home').classList.remove('hidden');
+    document.getElementById('homeUserName').textContent = session.nom;
+    await loadStoresIfNeeded();
+    await refreshHomeList();
+  }
+
+  // ========================= MAGASINS.CSV =========================
+  async function loadStoresIfNeeded(){
+    if(stores.length) return;
+    try{
+      const res = await fetch(MAGASINS_CSV_URL);
+      const text = await res.text();
+      stores = parseCsv(text);
+    }catch(e){
+      console.error('Chargement magasins.csv échoué', e);
+    }
+  }
+
+  function parseCsv(text){
+    const lines = text.split(/\r?\n/).filter(l => l.trim().length);
+    if(!lines.length) return [];
+    const headers = lines[0].split(';').map(h => h.trim());
+    return lines.slice(1).map(line => {
+      const cells = line.split(';');
+      const row = {};
+      headers.forEach((h, i) => row[h] = (cells[i] || '').trim());
+      return row;
+    });
+  }
+
+  // ========================= HOME LIST =========================
+  async function refreshHomeList(){
+    const list = document.getElementById('homeList');
+    list.innerHTML = '<div class="empty-state">Chargement...</div>';
+    try{
+      const res = await fetch(WORKER_URL + '/accompagnement-list', {
+        headers:{ 'X-Accomp-Session': session.token }
+      });
+      const data = await res.json();
+      const items = data.items || [];
+      if(!items.length){
+        list.innerHTML = '<div class="empty-state">Aucun compte-rendu pour l\'instant.</div>';
+        return;
+      }
+      list.innerHTML = '';
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'list-item';
+        div.onclick = () => openRecord(item.id);
+        div.innerHTML = `
+          <div class="li-main">
+            <div class="li-store">${escapeHtml(item.magasin_libelle)} — ${escapeHtml(item.manager || '')}</div>
+            <div class="li-meta">${formatDateFr(item.date_visite)}</div>
+          </div>
+          <span class="badge ${item.statut === 'finalise' ? 'final' : ''}">${item.statut === 'finalise' ? 'Finalisé' : 'Brouillon'}</span>
+        `;
+        list.appendChild(div);
+      });
+    }catch(e){
+      list.innerHTML = '<div class="empty-state">Impossible de charger la liste.</div>';
+    }
+  }
+
+  function formatDateFr(iso){
+    if(!iso) return '';
+    const d = new Date(iso);
+    if(isNaN(d)) return iso;
+    return d.toLocaleDateString('fr-FR');
+  }
+  function escapeHtml(s){
+    return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ========================= NEW / OPEN RECORD =========================
+  function startNew(){
+    currentRecord = {
+      id: null,
+      magasin_code:'', magasin_libelle:'', manager:'',
+      itinerant: session.nom,
+      date_visite: new Date().toISOString().slice(0,10),
+      statut:'brouillon',
+      saisieManuelle: false,
+      contenu: emptyContenu()
+    };
+    openEditor();
+  }
+
+  async function openRecord(id){
+    try{
+      const res = await fetch(WORKER_URL + '/accompagnement-get?id=' + encodeURIComponent(id), {
+        headers:{ 'X-Accomp-Session': session.token }
+      });
+      const data = await res.json();
+      const contenu = Object.assign(emptyContenu(), JSON.parse(data.contenu_json || '{}'));
+      currentRecord = {
+        id: data.id,
+        magasin_code: data.magasin_code,
+        magasin_libelle: data.magasin_libelle,
+        manager: data.manager,
+        itinerant: data.itinerant,
+        date_visite: data.date_visite,
+        statut: data.statut,
+        saisieManuelle: !!(data.magasin_code && data.magasin_code.startsWith('MANUEL-')) || !!contenu.infos.magasinEmailManuel,
+        contenu
+      };
+      openEditor();
+    }catch(e){
+      alert('Impossible d\'ouvrir ce compte-rendu.');
+    }
+  }
+
+  function goHome(){
+    if(currentRecord && currentRecord.statut !== 'finalise') saveDraft(true);
+    document.getElementById('screen-app').classList.add('hidden');
+    showHome();
+  }
+
+  // ========================= EDITOR =========================
+  function openEditor(){
+    document.getElementById('screen-home').classList.add('hidden');
+    document.getElementById('screen-app').classList.remove('hidden');
+    populateForm();
+    goTo(1);
+  }
+
+  function populateForm(){
+    document.getElementById('manualStoreToggle').checked = !!currentRecord.saisieManuelle;
+    applyManualStoreVisibility(currentRecord.saisieManuelle);
+    if(currentRecord.saisieManuelle){
+      document.getElementById('manualLibelle').value = currentRecord.magasin_libelle || '';
+      document.getElementById('manualCode').value = (currentRecord.magasin_code || '').replace(/^MANUEL-/, '');
+      document.getElementById('manualManagerInput').value = currentRecord.manager || '';
+      document.getElementById('manualEmail').value = getByPath(currentRecord.contenu, 'infos.magasinEmailManuel') || '';
+    } else {
+      document.getElementById('storeSearch').value = currentRecord.magasin_libelle || '';
+    }
+    document.getElementById('managerName').textContent = currentRecord.manager || '—';
+    document.getElementById('itinerantName').textContent = currentRecord.itinerant || '—';
+    document.getElementById('appStoreName').textContent = currentRecord.magasin_libelle || 'Sélectionner un magasin';
+    document.getElementById('appStoreMeta').textContent =
+      (currentRecord.manager ? currentRecord.manager + ' · ' : '') + 'Itinérant : ' + (currentRecord.itinerant || '');
+    setStatusPill(currentRecord.statut === 'finalise');
+
+    // champs simples data-field
+    document.querySelectorAll('[data-field]').forEach(el => {
+      const val = getByPath(currentRecord.contenu, el.dataset.field);
+      el.value = val != null ? val : '';
+    });
+    document.getElementById('f_dateVisite').value = currentRecord.date_visite || '';
+
+    renderHistorique();
+    renderCollabs();
+    renderManagerRows();
+    renderActions();
+    renderRecap();
+
+    const locked = currentRecord.statut === 'finalise';
+    document.querySelectorAll('#screen-app input, #screen-app textarea, #screen-app select, #screen-app .link-btn')
+      .forEach(el => el.disabled = locked);
+  }
+
+  function getByPath(obj, path){
+    return path.split('.').reduce((o,k) => (o ? o[k] : undefined), obj);
+  }
+  function setByPath(obj, path, val){
+    const keys = path.split('.');
+    let cur = obj;
+    for(let i=0;i<keys.length-1;i++) cur = cur[keys[i]];
+    cur[keys[keys.length-1]] = val;
+  }
+
+  document.addEventListener('input', (e) => {
+    if(e.target.dataset && e.target.dataset.field && currentRecord){
+      setByPath(currentRecord.contenu, e.target.dataset.field, e.target.value);
+      scheduleSave();
+    }
+  });
+
+  // ---- Étape 1 : recherche magasin ----
+  function onStoreSearch(){
+    const q = document.getElementById('storeSearch').value.trim().toLowerCase();
+    const box = document.getElementById('storeSuggestions');
+    if(q.length < 2){ box.classList.add('hidden'); box.innerHTML=''; return; }
+    const matches = stores.filter(s =>
+      (s.libelle || s.Libelle || '').toLowerCase().includes(q) ||
+      (s.code || s.Code || '').toLowerCase().includes(q)
+    ).slice(0, 8);
+    if(!matches.length){ box.classList.add('hidden'); box.innerHTML=''; return; }
+    box.innerHTML = matches.map(s => `
+      <div class="autocomplete-item" onclick='selectStore(${JSON.stringify(JSON.stringify(s))})'>
+        ${escapeHtml(s.libelle || s.Libelle)} <span class="ac-code">${escapeHtml(s.code || s.Code || '')}</span>
+      </div>
+    `).join('');
+    box.classList.remove('hidden');
+  }
+  function selectStore(jsonStr){
+    const s = JSON.parse(jsonStr);
+    currentRecord.magasin_code = s.code || s.Code || '';
+    currentRecord.magasin_libelle = s.libelle || s.Libelle || '';
+    currentRecord.manager = s[MANAGER_COL] || s.manager || '';
+    document.getElementById('storeSearch').value = currentRecord.magasin_libelle;
+    document.getElementById('managerName').textContent = currentRecord.manager || '—';
+    document.getElementById('appStoreName').textContent = currentRecord.magasin_libelle;
+    document.getElementById('appStoreMeta').textContent =
+      (currentRecord.manager ? currentRecord.manager + ' · ' : '') + 'Itinérant : ' + currentRecord.itinerant;
+    document.getElementById('storeSuggestions').classList.add('hidden');
+    renderRecap();
+    scheduleSave();
+  }
+  document.addEventListener('click', (e) => {
+    if(!e.target.closest('.autocomplete')) {
+      const box = document.getElementById('storeSuggestions');
+      if(box) box.classList.add('hidden');
+    }
+  });
+
+  // ---- Étape 1 : saisie manuelle (magasin hors magasins.csv, ex. franchise) ----
+  function applyManualStoreVisibility(manual){
+    document.getElementById('storeAutoBlock').classList.toggle('hidden', manual);
+    document.getElementById('storeManualBlock').classList.toggle('hidden', !manual);
+    document.getElementById('managerLockedBlock').classList.toggle('hidden', manual);
+    document.getElementById('manualManagerInput').classList.toggle('hidden', !manual);
+    document.getElementById('manualEmailBlock').classList.toggle('hidden', !manual);
+  }
+  function toggleManualStore(checked){
+    currentRecord.saisieManuelle = checked;
+    applyManualStoreVisibility(checked);
+    if(checked){
+      // on repart d'une sélection CSV éventuelle pour préremplir les champs manuels,
+      // l'itinérant les corrige ensuite librement
+      document.getElementById('manualLibelle').value = currentRecord.magasin_libelle || '';
+      document.getElementById('manualCode').value = (currentRecord.magasin_code || '').replace(/^MANUEL-/, '');
+      document.getElementById('manualManagerInput').value = currentRecord.manager || '';
+      document.getElementById('manualEmail').value = getByPath(currentRecord.contenu, 'infos.magasinEmailManuel') || '';
+      updateManualStore();
+    } else {
+      // repasse en mode magasins.csv : on vide la sélection manuelle, à re-choisir
+      currentRecord.magasin_code = '';
+      currentRecord.magasin_libelle = '';
+      currentRecord.manager = '';
+      setByPath(currentRecord.contenu, 'infos.magasinEmailManuel', '');
+      document.getElementById('storeSearch').value = '';
+      document.getElementById('managerName').textContent = '—';
+      document.getElementById('appStoreName').textContent = 'Sélectionner un magasin';
+      document.getElementById('appStoreMeta').textContent = 'Itinérant : ' + currentRecord.itinerant;
+    }
+    renderRecap();
+    scheduleSave();
+  }
+  function updateManualStore(){
+    const libelle = document.getElementById('manualLibelle').value.trim();
+    const codeSaisi = document.getElementById('manualCode').value.trim();
+    currentRecord.magasin_libelle = libelle;
+    currentRecord.magasin_code = codeSaisi || ('MANUEL-' + slugify(libelle));
+    currentRecord.manager = document.getElementById('manualManagerInput').value.trim();
+    setByPath(currentRecord.contenu, 'infos.magasinEmailManuel', document.getElementById('manualEmail').value.trim());
+    document.getElementById('managerName').textContent = currentRecord.manager || '—';
+    document.getElementById('appStoreName').textContent = currentRecord.magasin_libelle || 'Magasin (saisie manuelle)';
+    document.getElementById('appStoreMeta').textContent =
+      (currentRecord.manager ? currentRecord.manager + ' · ' : '') + 'Itinérant : ' + currentRecord.itinerant;
+    renderRecap();
+    scheduleSave();
+  }
+  function slugify(s){
+    return (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^A-Z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'MAGASIN';
+  }
+
+  // ---- Étape 2 : historique + collaborateurs ----
+  function renderHistorique(){
+    const body = document.getElementById('historiqueBody');
+    body.innerHTML = '';
+    if(!currentRecord.contenu.stats.historique.length){
+      const y = new Date().getFullYear();
+      currentRecord.contenu.stats.historique.push({annee:String(y-1),ca:'',objectif:'',positionnement:'',causes:''});
+      currentRecord.contenu.stats.historique.push({annee:String(y),ca:'',objectif:'',positionnement:'',causes:''});
+    }
+    currentRecord.contenu.stats.historique.forEach((row, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" value="${escapeHtml(row.annee)}" oninput="updateHistorique(${idx},'annee',this.value)"></td>
+        <td><input type="text" value="${escapeHtml(row.ca)}" oninput="updateHistorique(${idx},'ca',this.value)"></td>
+        <td><input type="text" value="${escapeHtml(row.objectif)}" oninput="updateHistorique(${idx},'objectif',this.value)"></td>
+        <td><span class="calc">calculé</span></td>
+        <td><input type="text" value="${escapeHtml(row.positionnement)}" oninput="updateHistorique(${idx},'positionnement',this.value)"></td>
+        <td><input type="text" value="${escapeHtml(row.causes)}" oninput="updateHistorique(${idx},'causes',this.value)"></td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+  function updateHistorique(idx, key, val){
+    currentRecord.contenu.stats.historique[idx][key] = val;
+    scheduleSave();
+  }
+  function addHistoriqueRow(){
+    currentRecord.contenu.stats.historique.push({annee:'',ca:'',objectif:'',positionnement:'',causes:''});
+    renderHistorique();
+    scheduleSave();
+  }
+
+  function renderCollabs(){
+    const list = document.getElementById('collabList');
+    list.innerHTML = '';
+    currentRecord.contenu.stats.collaborateurs.forEach((c, idx) => {
+      const div = document.createElement('div');
+      div.className = 'collab';
+      const isOpticien = c.role !== 'audio';
+      div.innerHTML = `
+        <div class="collab-head">
+          <input type="text" value="${escapeHtml(c.nom)}" placeholder="Nom — fonction" oninput="updateCollab(${idx},'nom',this.value)">
+          <div class="role-toggle">
+            <button class="${isOpticien?'on':''}" onclick="setCollabRole(${idx},'opticien')">Opticien</button>
+            <button class="${!isOpticien?'on':''}" onclick="setCollabRole(${idx},'audio')">Audio</button>
+          </div>
+          <button class="remove-collab" onclick="removeCollab(${idx})">×</button>
+        </div>
+        <div class="metric-grid">
+          ${isOpticien ? `
+            <div class="field-group"><label>Ventes</label><input type="text" value="${escapeHtml(c.ventes)}" oninput="updateCollab(${idx},'ventes',this.value)"></div>
+            <div class="field-group"><label>PM</label><input type="text" value="${escapeHtml(c.pm)}" oninput="updateCollab(${idx},'pm',this.value)"></div>
+            <div class="field-group"><label>SOP</label><input type="text" value="${escapeHtml(c.sop)}" oninput="updateCollab(${idx},'sop',this.value)"></div>
+            <div class="field-group"><label>TC</label><input type="text" value="${escapeHtml(c.tc)}" oninput="updateCollab(${idx},'tc',this.value)"></div>
+            <div class="field-group"><label>PC</label><input type="text" value="${escapeHtml(c.pc)}" oninput="updateCollab(${idx},'pc',this.value)"></div>
+            <div class="field-group"><label>MDC</label><input type="text" value="${escapeHtml(c.mdc)}" oninput="updateCollab(${idx},'mdc',this.value)"></div>
+          ` : `
+            <div class="field-group"><label>Ventes</label><input type="text" value="${escapeHtml(c.ventes)}" oninput="updateCollab(${idx},'ventes',this.value)"></div>
+            <div class="field-group"><label>PM</label><input type="text" value="${escapeHtml(c.pm)}" oninput="updateCollab(${idx},'pm',this.value)"></div>
+            <div class="field-group"><label>TC</label><input type="text" value="${escapeHtml(c.tc)}" oninput="updateCollab(${idx},'tc',this.value)"></div>
+            <div class="field-group"><label>Ouiezen</label><input type="text" value="${escapeHtml(c.ouiezen)}" oninput="updateCollab(${idx},'ouiezen',this.value)"></div>
+            <div class="field-group"><label>SAP</label><input type="text" value="${escapeHtml(c.sap)}" oninput="updateCollab(${idx},'sap',this.value)"></div>
+            <div class="field-group"><label>Chargeurs</label><input type="text" value="${escapeHtml(c.chargeurs)}" oninput="updateCollab(${idx},'chargeurs',this.value)"></div>
+          `}
+        </div>
+      `;
+      list.appendChild(div);
+    });
+  }
+  function addCollab(){
+    currentRecord.contenu.stats.collaborateurs.push({nom:'', role:'opticien', ventes:'',pm:'',sop:'',tc:'',pc:'',mdc:'',ouiezen:'',sap:'',chargeurs:''});
+    renderCollabs();
+    scheduleSave();
+  }
+  function updateCollab(idx, key, val){
+    currentRecord.contenu.stats.collaborateurs[idx][key] = val;
+    scheduleSave();
+  }
+  function setCollabRole(idx, role){
+    currentRecord.contenu.stats.collaborateurs[idx].role = role;
+    renderCollabs();
+    scheduleSave();
+  }
+  function removeCollab(idx){
+    currentRecord.contenu.stats.collaborateurs.splice(idx,1);
+    renderCollabs();
+    scheduleSave();
+  }
+
+  // ---- Étape 5 : forces manager + actions ----
+  function renderManagerRows(){
+    const body = document.getElementById('managerRowsBody');
+    body.innerHTML = '';
+    if(!currentRecord.contenu.plan.managerRows.length){
+      currentRecord.contenu.plan.managerRows = [{forces:'',ameliorer:'',solutions:''}];
+    }
+    currentRecord.contenu.plan.managerRows.forEach((row, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" value="${escapeHtml(row.forces)}" oninput="updateManagerRow(${idx},'forces',this.value)"></td>
+        <td><input type="text" value="${escapeHtml(row.ameliorer)}" oninput="updateManagerRow(${idx},'ameliorer',this.value)"></td>
+        <td><input type="text" value="${escapeHtml(row.solutions)}" oninput="updateManagerRow(${idx},'solutions',this.value)"></td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+  function addManagerRow(){
+    currentRecord.contenu.plan.managerRows.push({forces:'',ameliorer:'',solutions:''});
+    renderManagerRows();
+    scheduleSave();
+  }
+  function updateManagerRow(idx, key, val){
+    currentRecord.contenu.plan.managerRows[idx][key] = val;
+    scheduleSave();
+  }
+
+  function renderActions(){
+    const list = document.getElementById('actionList');
+    list.innerHTML = '';
+    currentRecord.contenu.plan.actions.forEach((a, idx) => {
+      const div = document.createElement('div');
+      div.className = 'action-row';
+      div.innerHTML = `
+        <input type="text" value="${escapeHtml(a.action)}" placeholder="Action" oninput="updateAction(${idx},'action',this.value)">
+        <input type="text" value="${escapeHtml(a.responsable)}" placeholder="Responsable" oninput="updateAction(${idx},'responsable',this.value)">
+        <input type="date" value="${escapeHtml(a.echeance)}" oninput="updateAction(${idx},'echeance',this.value)">
+        <select onchange="updateAction(${idx},'statut',this.value)">
+          <option ${a.statut==='A faire'?'selected':''}>A faire</option>
+          <option ${a.statut==='En cours'?'selected':''}>En cours</option>
+          <option ${a.statut==='Fait'?'selected':''}>Fait</option>
+        </select>
+        <button class="remove-btn" onclick="removeAction(${idx})">×</button>
+      `;
+      list.appendChild(div);
+    });
+  }
+  function addAction(){
+    currentRecord.contenu.plan.actions.push({action:'',responsable:'',echeance:'',statut:'A faire'});
+    renderActions();
+    scheduleSave();
+  }
+  function updateAction(idx, key, val){
+    currentRecord.contenu.plan.actions[idx][key] = val;
+    scheduleSave();
+  }
+  function removeAction(idx){
+    currentRecord.contenu.plan.actions.splice(idx,1);
+    renderActions();
+    scheduleSave();
+  }
+
+  // ---- Étape 7 : récap ----
+  function renderRecap(){
+    const list = document.getElementById('recapList');
+    list.innerHTML = `
+      <li><span>Magasin</span><span>${escapeHtml(currentRecord.magasin_libelle || '—')}</span></li>
+      <li><span>Manager</span><span>${escapeHtml(currentRecord.manager || '—')}</span></li>
+      <li><span>Date de visite</span><span>${formatDateFr(currentRecord.date_visite)}</span></li>
+    `;
+    const rec = document.getElementById('recipientsList');
+    let storeEmail = getByPath(currentRecord.contenu, 'infos.magasinEmailManuel') || '';
+    if(!storeEmail){
+      const store = stores.find(s => (s.code || s.Code) === currentRecord.magasin_code);
+      storeEmail = store ? (store.email || store.Email || '') : '';
+    }
+    rec.innerHTML = `
+      <div class="recipient"><div class="avatar">${initials(currentRecord.magasin_libelle)}</div>Magasin ${escapeHtml(currentRecord.magasin_libelle||'')}<span class="addr">${escapeHtml(storeEmail || '—')}</span></div>
+      <div class="recipient"><div class="avatar">${initials(currentRecord.itinerant)}</div>${escapeHtml(currentRecord.itinerant||'')}<span class="addr">${escapeHtml(session.email)}</span></div>
+    `;
+  }
+  function initials(s){
+    return (s||'').split(/\\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase() || '?';
+  }
+
+  // ========================= NAVIGATION =========================
+  function goTo(n){
+    currentStep = n;
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', +s.dataset.screen === n));
+    document.querySelectorAll('.step').forEach(s => {
+      const num = +s.dataset.step;
+      s.classList.toggle('active', num === n);
+      s.classList.toggle('done', num < n);
+    });
+    document.getElementById('prevBtn').disabled = (n === 1);
+    const nextBtn = document.getElementById('nextBtn');
+    const locked = currentRecord.statut === 'finalise';
+    if(n === totalSteps){
+      nextBtn.textContent = 'Finaliser et envoyer';
+      nextBtn.className = 'btn accent';
+      nextBtn.disabled = locked;
+    } else {
+      nextBtn.textContent = 'Suivant';
+      nextBtn.className = 'btn primary';
+      nextBtn.disabled = false;
+    }
+    if(n === 7) renderRecap();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  function nextStep(){
+    if(currentStep < totalSteps) goTo(currentStep + 1);
+    else finalizeRecord();
+  }
+  function prevStep(){
+    if(currentStep > 1) goTo(currentStep - 1);
+  }
+  function setStatusPill(isFinal){
+    const pill = document.getElementById('statusPill');
+    if(isFinal){
+      pill.classList.add('final');
+      pill.innerHTML = '<span class="dot"></span> Finalisé';
+    } else {
+      pill.classList.remove('final');
+      pill.innerHTML = '<span class="dot"></span> Brouillon';
+    }
+  }
+
+  // ========================= SAVE / FINALIZE =========================
+  function scheduleSave(){
+    document.getElementById('saveStatus').textContent = 'Modifications non enregistrées...';
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => saveDraft(false), 1200);
+  }
+
+  async function saveDraft(silent){
+    if(!currentRecord || !currentRecord.magasin_code) return;
+    if(currentRecord.statut === 'finalise') return;
+    try{
+      const res = await fetch(WORKER_URL + '/accompagnement-save', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'X-Accomp-Session': session.token },
+        body: JSON.stringify({
+          id: currentRecord.id,
+          magasin_code: currentRecord.magasin_code,
+          magasin_libelle: currentRecord.magasin_libelle,
+          manager: currentRecord.manager,
+          itinerant: currentRecord.itinerant,
+          date_visite: document.getElementById('f_dateVisite').value || currentRecord.date_visite,
+          contenu_json: JSON.stringify(currentRecord.contenu)
+        })
+      });
+      const data = await res.json();
+      if(data && data.id) currentRecord.id = data.id;
+      document.getElementById('saveStatus').textContent = 'Enregistré à ' + new Date().toLocaleTimeString('fr-FR');
+    }catch(e){
+      document.getElementById('saveStatus').textContent = "Échec de l'enregistrement — nouvelle tentative au prochain changement";
+    }
+  }
+
+  async function finalizeRecord(){
+    if(!currentRecord.magasin_code){ alert('Sélectionnez un magasin avant de finaliser.'); goTo(1); return; }
+    if(!confirm('Finaliser ce compte-rendu ? Il sera verrouillé et envoyé par email au magasin et à vous-même.')) return;
+    await saveDraft(true);
+    try{
+      const res = await fetch(WORKER_URL + '/accompagnement-finalize', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'X-Accomp-Session': session.token },
+        body: JSON.stringify({ id: currentRecord.id })
+      });
+      if(!res.ok) throw new Error('finalize failed');
+      currentRecord.statut = 'finalise';
+      setStatusPill(true);
+      populateForm();
+      alert('Compte-rendu finalisé et envoyé.');
+    }catch(e){
+      alert('Échec de la finalisation. Réessayez.');
+    }
+  }
+
+  // ========================= INIT =========================
+  restoreSession();
+
+  // Service worker (offline shell minimal, cohérent avec le reste de la suite)
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js?v=' + SW_VERSION).catch(()=>{});
+  }
+</script>
+
+</body>
+</html>
