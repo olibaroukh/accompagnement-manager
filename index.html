@@ -99,6 +99,11 @@
   .list-item .li-main{ flex:1; min-width:0; }
   .list-item .li-store{ font-weight:600; font-size:15px; }
   .list-item .li-meta{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .li-delete{
+    width:26px; height:26px; border-radius:50%; border:1px solid var(--line); background:var(--paper);
+    color:var(--muted); cursor:pointer; font-size:15px; line-height:1; flex-shrink:0;
+  }
+  .li-delete:hover{ background:var(--accent); border-color:var(--accent); color:#fff; }
   .badge{
     font-size:11px; font-weight:600; padding:4px 9px; border-radius:999px; white-space:nowrap;
     background:var(--cream-deep); color:var(--muted);
@@ -151,6 +156,22 @@
   }
   input:focus, textarea:focus, select:focus{ outline:none; border-color:var(--accent); }
   textarea{ resize:vertical; min-height:70px; line-height:1.45; }
+  .voice-wrap{ position:relative; }
+  .voice-wrap textarea{ padding-right:42px; }
+  .voice-btn{
+    position:absolute; top:8px; right:8px; width:28px; height:28px; border-radius:50%;
+    border:1px solid var(--line); background:var(--paper); cursor:pointer; font-size:13px;
+    display:flex; align-items:center; justify-content:center; padding:0; z-index:2;
+  }
+  .voice-btn:hover{ border-color:var(--ink); }
+  .voice-btn.recording{
+    background:var(--accent); border-color:var(--accent);
+    animation: voicepulse 1.1s ease-in-out infinite;
+  }
+  @keyframes voicepulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(204,23,25,.35); }
+    50%{ box-shadow:0 0 0 6px rgba(204,23,25,0); }
+  }
   .field-locked{
     display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--cream-deep);
     border:1px solid var(--line); border-radius:var(--radius); font-size:15px;
@@ -579,8 +600,8 @@
   // ========================= CONFIG =========================
   const WORKER_URL = 'https://zimbra-relay.oli-baroukh.workers.dev';
   const MAGASINS_CSV_URL = 'https://raw.githubusercontent.com/olibaroukh/bilan-passage/main/magasins.csv';
-  const APP_VERSION = '2026.09.08-1';
-  const SW_VERSION = '2026.09.08-1';
+  const APP_VERSION = '2026.09.08-2';
+  const SW_VERSION = '2026.09.08-2';
   // NOTE : nom de colonne manager dans magasins.csv à confirmer — 'manager' utilisé
   // par défaut ci-dessous (MANAGER_COL), à ajuster si le nom réel diffère.
   const MANAGER_COL = 'manager';
@@ -718,11 +739,28 @@
             <div class="li-meta">${formatDateFr(item.date_visite)}</div>
           </div>
           <span class="badge ${item.statut === 'finalise' ? 'final' : ''}">${item.statut === 'finalise' ? 'Finalisé' : 'Brouillon'}</span>
+          <button class="li-delete" title="Supprimer">×</button>
         `;
+        div.querySelector('.li-delete').onclick = (e) => { e.stopPropagation(); deleteRecord(item.id, item.magasin_libelle); };
         list.appendChild(div);
       });
     }catch(e){
       list.innerHTML = '<div class="empty-state">Impossible de charger la liste.</div>';
+    }
+  }
+
+  async function deleteRecord(id, libelle){
+    if(!confirm(`Supprimer définitivement le compte-rendu "${libelle || 'sans magasin'}" ? Cette action est irréversible.`)) return;
+    try{
+      const res = await fetch(WORKER_URL + '/accompagnement-delete', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'X-Accomp-Session': session.token },
+        body: JSON.stringify({ id })
+      });
+      if(!res.ok) throw new Error('delete failed');
+      await refreshHomeList();
+    }catch(e){
+      alert('Échec de la suppression. Réessayez.');
     }
   }
 
@@ -1199,8 +1237,78 @@
     }
   }
 
+  // ========================= DICTÉE VOCALE =========================
+  // Même mécanisme que Bilan de Passage : Web Speech API, fr-FR. Un micro par
+  // textarea, ajouté une seule fois au chargement (les textareas de l'éditeur
+  // sont statiques dans le HTML, seules les lignes de tableaux dynamiques —
+  // historique, collaborateurs, actions — n'en ont pas besoin, ce sont de
+  // simples champs courts).
+  let activeRecognition = null;
+  let activeTarget = null;
+
+  function setupVoiceInputs(){
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    document.querySelectorAll('textarea[data-field]').forEach(ta => {
+      if(ta.dataset.voiceReady) return;
+      ta.dataset.voiceReady = '1';
+      const wrap = document.createElement('div');
+      wrap.className = 'voice-wrap';
+      ta.parentNode.insertBefore(wrap, ta);
+      wrap.appendChild(ta);
+      if(!SpeechRecognition) return; // navigateur non compatible : pas de bouton plutôt qu'un bouton mort
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'voice-btn';
+      btn.textContent = '🎤';
+      btn.title = 'Dictée vocale';
+      btn.onclick = (e) => { e.preventDefault(); toggleVoiceInput(ta, btn); };
+      wrap.appendChild(btn);
+    });
+  }
+
+  function toggleVoiceInput(textarea, btn){
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(activeRecognition && activeTarget === textarea){
+      activeRecognition.stop();
+      return;
+    }
+    if(activeRecognition) activeRecognition.stop();
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'fr-FR';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    const baseValue = textarea.value ? textarea.value.trim() + ' ' : '';
+    let finalTranscript = '';
+
+    recognition.onresult = (event) => {
+      let interim = '';
+      for(let i = event.resultIndex; i < event.results.length; i++){
+        const transcript = event.results[i][0].transcript;
+        if(event.results[i].isFinal) finalTranscript += transcript + ' ';
+        else interim += transcript;
+      }
+      textarea.value = baseValue + finalTranscript + interim;
+      textarea.dispatchEvent(new Event('input', { bubbles:true }));
+    };
+    const stop = () => {
+      btn.classList.remove('recording');
+      activeRecognition = null;
+      activeTarget = null;
+    };
+    recognition.onerror = stop;
+    recognition.onend = stop;
+
+    activeRecognition = recognition;
+    activeTarget = textarea;
+    btn.classList.add('recording');
+    recognition.start();
+  }
+
   // ========================= INIT =========================
   restoreSession();
+  setupVoiceInputs();
 
   // Service worker (offline shell minimal, cohérent avec le reste de la suite)
   if('serviceWorker' in navigator){
