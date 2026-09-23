@@ -1,4 +1,4 @@
-const SW_VERSION = '2026.09.23-1';
+const SW_VERSION = '2026.09.23-2';
 const CACHE_NAME = 'accompagnement-manager-' + SW_VERSION;
 const SHELL = ['./', './index.html'];
 
